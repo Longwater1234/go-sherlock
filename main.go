@@ -38,7 +38,7 @@ type Website struct {
 
 var WebsiteArr []Website
 
-// Search :Our ACTUAL function
+// Search :Our ACTUAL LOOKUP function
 func Search(wg *sync.WaitGroup, c *http.Client, w Website, username string) {
 	var finalUrl string = strings.ReplaceAll(w.Url, "%", username)
 	mama := strings.SplitAfter(w.Url, "//")[1]
