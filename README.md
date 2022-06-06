@@ -5,5 +5,5 @@ Modified GO version of Project Sherlock (https://github.com/sherlock-project/she
 - Looks up username in about 1000 websites (List taken from https://github.com/qeeqbox/social-analyzer)
 - To get started, simply, open Terminal or CMD in project directory, then, for example you want to lookup username "johndoe":
 ```
-go build main.go && ./main johndoe
+go run main.go johndoe
 ```
