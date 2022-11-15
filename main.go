@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-//global error handler
+// global error handler
 func check(e error) {
 	if e != nil {
 		panic(e)
@@ -51,7 +51,7 @@ func Search(wg *sync.WaitGroup, c *http.Client, w Website, username string) {
 	defer res.Body.Close()
 	// what the HELL! NO TERNARY operator!
 	var exists string
-	if res.StatusCode == 200 {
+	if res.StatusCode == 200 || res.StatusCode == 301 || res.StatusCode == 302 {
 		exists = string(GREEN) + "\u2713"
 		FOUND++
 	} else {
@@ -62,11 +62,11 @@ func Search(wg *sync.WaitGroup, c *http.Client, w Website, username string) {
 	fmt.Printf("%v %s on %s? %v \n", exists, username, mama, string(RESET))
 }
 
-//OUR MAIN FUNCTION
+// OUR MAIN FUNCTION
 func main() {
 	var wg sync.WaitGroup
 
-	// <-- UNCOMMENT LINE BELOW TO USE args -->
+	// UNCOMMENT LINE BELOW TO USE args
 	var username string = os.Args[1]
 	//var username string = "jon"
 	if len(username) < 2 {
@@ -79,11 +79,11 @@ func main() {
 		panic(errors.New("username is invalid"))
 	}
 
-	client := http.Client{
+	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
 
-	starting := time.Now().UnixNano()
+	starting := time.Now()
 	fmt.Println("Starting search...")
 
 	//open the json file
@@ -94,19 +94,19 @@ func main() {
 	//decode the JSON file to a Slice
 	r := bufio.NewReader(f)
 	jd := json.NewDecoder(r)
-	err1 := jd.Decode(&WebsiteArr)
-	check(err1)
+	err = jd.Decode(&WebsiteArr)
+	check(err)
 
 	//do the Search for each site
 	for _, w := range WebsiteArr {
 		wg.Add(1)
-		go Search(&wg, &client, w, username)
+		go Search(&wg, client, w, username)
 
 	}
 
 	fmt.Println("Main: Waiting for workers to finish")
 	wg.Wait()
-	fmt.Printf("Search: Completed in: %d ms\n", (time.Now().UnixNano()-starting)/1e6)
+	fmt.Printf("Search: Completed in: %d ms\n", time.Since(starting).Milliseconds())
 	fmt.Print("\n")
 	fmt.Printf("%s found in %d SITES \n", username, FOUND)
 	fmt.Printf("%s NOT found in %d SITES \n", username, NOTFOUND)
