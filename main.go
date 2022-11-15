@@ -92,8 +92,8 @@ func main() {
 	defer f.Close()
 
 	//decode the JSON file to a Slice
-	r := bufio.NewReader(f)
-	jd := json.NewDecoder(r)
+	br := bufio.NewReader(f)
+	jd := json.NewDecoder(br)
 	err = jd.Decode(&WebsiteArr)
 	check(err)
 
