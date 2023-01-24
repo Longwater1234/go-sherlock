@@ -1,4 +1,4 @@
-/* (c) 2021 Davis Tibbz>> https://github.com/longwater1234       */
+/* (c) 2021 Davis Tibbz. MIT License https://github.com/longwater1234       */
 package main
 
 import (
@@ -6,26 +6,29 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"regexp"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
-//global error handler
+// global error handler
 func check(e error) {
 	if e != nil {
-		panic(e)
+		log.Fatal(e)
 	}
 }
 
 var (
-	FOUND    int16 = 0
-	NOTFOUND int16 = 0
+	FOUND    uint32 = 0
+	NOTFOUND uint32 = 0
 )
 
+// console colors
 const (
 	RED   string = "\033[31m"
 	GREEN string = "\033[32m"
@@ -38,7 +41,7 @@ type Website struct {
 
 var WebsiteArr []Website
 
-// Search :Our ACTUAL LOOKUP function
+// Search :for the given username in the website
 func Search(wg *sync.WaitGroup, c *http.Client, w Website, username string) {
 	var finalUrl string = strings.ReplaceAll(w.Url, "%", username)
 	mama := strings.SplitAfter(w.Url, "//")[1]
@@ -49,41 +52,38 @@ func Search(wg *sync.WaitGroup, c *http.Client, w Website, username string) {
 		return
 	}
 	defer res.Body.Close()
-	// what the HELL! NO TERNARY operator!
+
 	var exists string
 	if res.StatusCode == 200 {
 		exists = string(GREEN) + "\u2713"
-		FOUND++
+		atomic.AddUint32(&FOUND, 1)
 	} else {
 		exists = string(RED) + "x"
-		NOTFOUND++
+		atomic.AddUint32(&NOTFOUND, 1)
 	}
 
 	fmt.Printf("%v %s on %s? %v \n", exists, username, mama, string(RESET))
 }
 
-//OUR MAIN FUNCTION
 func main() {
 	var wg sync.WaitGroup
 
-	// <-- UNCOMMENT LINE BELOW TO USE args -->
 	var username string = os.Args[1]
-	//var username string = "jon"
 	if len(username) < 2 {
-		panic(errors.New("username is too short"))
+		check(errors.New("username is too short"))
 	}
 
 	reg := regexp.MustCompile("^[a-zA-Z0-9_-]{2,}$")
 
 	if !reg.MatchString(username) {
-		panic(errors.New("username is invalid"))
+		check(errors.New("username is invalid"))
 	}
 
 	client := http.Client{
 		Timeout: 30 * time.Second,
 	}
 
-	starting := time.Now().UnixNano()
+	starting := time.Now()
 	fmt.Println("Starting search...")
 
 	//open the json file
@@ -101,12 +101,11 @@ func main() {
 	for _, w := range WebsiteArr {
 		wg.Add(1)
 		go Search(&wg, &client, w, username)
-
 	}
 
 	fmt.Println("Main: Waiting for workers to finish")
 	wg.Wait()
-	fmt.Printf("Search: Completed in: %d ms\n", (time.Now().UnixNano()-starting)/1e6)
+	fmt.Printf("Search completed in: %d ms \n", time.Since(starting).Milliseconds())
 	fmt.Print("\n")
 	fmt.Printf("%s found in %d SITES \n", username, FOUND)
 	fmt.Printf("%s NOT found in %d SITES \n", username, NOTFOUND)
