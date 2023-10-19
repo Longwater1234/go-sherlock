@@ -24,8 +24,8 @@ func check(e error) {
 }
 
 var (
-	FOUND    uint32 = 0
-	NOTFOUND uint32 = 0
+	FOUND    atomic.Int32
+	NOTFOUND atomic.Int32
 )
 
 // console colors
@@ -56,10 +56,10 @@ func Search(wg *sync.WaitGroup, c *http.Client, w Website, username string) {
 	var exists string
 	if res.StatusCode == 200 {
 		exists = string(GREEN) + "\u2713"
-		atomic.AddUint32(&FOUND, 1)
+		FOUND.Add(1)
 	} else {
 		exists = string(RED) + "x"
-		atomic.AddUint32(&NOTFOUND, 1)
+		NOTFOUND.Add(1)
 	}
 
 	fmt.Printf("%v %s on %s? %v \n", exists, username, mama, string(RESET))
@@ -107,7 +107,7 @@ func main() {
 	wg.Wait()
 	fmt.Printf("Search completed in: %d ms \n", time.Since(starting).Milliseconds())
 	fmt.Print("\n")
-	fmt.Printf("%s found in %d SITES \n", username, FOUND)
-	fmt.Printf("%s NOT found in %d SITES \n", username, NOTFOUND)
+	fmt.Printf("%s found in %d SITES \n", username, FOUND.Load())
+	fmt.Printf("%s NOT found in %d SITES \n", username, NOTFOUND.Load())
 
 }
